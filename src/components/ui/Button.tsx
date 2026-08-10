@@ -1,5 +1,5 @@
 // src/components/ui/Button.tsx
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native'
 import * as Haptics from 'expo-haptics'
 import { colors, typography, radii, layout, durations } from '@/theme/tokens'
 
@@ -15,17 +15,19 @@ interface ButtonProps {
   disabled?:  boolean
   fullWidth?: boolean
   icon?:      React.ReactNode
+  style?:     ViewStyle
 }
 
 export function Button({
   label,
   onPress,
-  variant  = 'primary',
-  size     = 'md',
-  loading  = false,
-  disabled = false,
+  variant   = 'primary',
+  size      = 'md',
+  loading   = false,
+  disabled  = false,
   fullWidth = true,
   icon,
+  style,
 }: ButtonProps) {
 
   const isDisabled = disabled || loading
@@ -47,6 +49,7 @@ export function Button({
         fullWidth && styles.fullWidth,
         pressed && !isDisabled && styles.pressed,
         isDisabled && styles.disabled,
+        style,
       ]}
     >
       {loading ? (
@@ -72,7 +75,6 @@ const styles = StyleSheet.create({
     alignItems:     'center',
     justifyContent: 'center',
     flexDirection:  'row',
-    transitionDuration: `${durations.fast}ms`,
   },
   fullWidth: {
     width: '100%',
@@ -98,17 +100,17 @@ const styles = StyleSheet.create({
 
   // Tamaños
   md: {
-    height:          layout.buttonHeight,
+    height:            layout.buttonHeight,
     paddingHorizontal: 24,
   },
   sm: {
-    height:          layout.buttonHeightSm,
+    height:            layout.buttonHeightSm,
     paddingHorizontal: 16,
   },
 
   // Estados
   pressed: {
-    opacity: 0.82,
+    opacity:   0.82,
     transform: [{ scale: 0.98 }],
   },
   disabled: {
@@ -117,16 +119,16 @@ const styles = StyleSheet.create({
 
   // Labels
   content: {
-    flexDirection:  'row',
-    alignItems:     'center',
-    gap:            8,
+    flexDirection: 'row',
+    alignItems:    'center',
+    gap:           8,
   },
   iconWrapper: {
     alignItems:     'center',
     justifyContent: 'center',
   },
   label: {
-    fontWeight:  typography.weights.bold,
+    fontWeight:    typography.weights.bold,
     letterSpacing: typography.letterSpacings.wide,
   },
   label_primary: {

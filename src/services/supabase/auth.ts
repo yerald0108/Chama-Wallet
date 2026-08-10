@@ -6,12 +6,10 @@ export async function registrarUsuario(
   password: string,
   username: string,
 ) {
-  // 1. Crear cuenta en Supabase Auth
   const { data, error } = await supabase.auth.signUp({ email, password })
   if (error) throw new Error(error.message)
   if (!data.user) throw new Error('No se pudo crear el usuario')
 
-  // 2. Crear perfil en tabla usuarios
   const { error: perfilError } = await supabase
     .from('usuarios')
     .insert({
@@ -50,7 +48,7 @@ export async function verificarUsername(username: string): Promise<boolean> {
     .eq('username', username.toLowerCase().trim())
     .single()
 
-  return !data // true = disponible
+  return !data
 }
 
 export async function obtenerPerfil(authId: string) {

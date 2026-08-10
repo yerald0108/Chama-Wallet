@@ -1,11 +1,11 @@
 // src/components/ui/Screen.tsx
 import { View, ScrollView, StyleSheet, type ViewProps } from 'react-native'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { colors, layout } from '@/theme/tokens'
 
 interface ScreenProps extends ViewProps {
-  scroll?:  boolean
-  padded?:  boolean
+  scroll?:   boolean
+  padded?:   boolean
   centered?: boolean
 }
 
@@ -17,55 +17,60 @@ export function Screen({
   children,
   ...props
 }: ScreenProps) {
-  const insets = useSafeAreaInsets()
-
-  const containerStyle = [
-    styles.base,
-    {
-      paddingTop:    insets.top,
-      paddingBottom: insets.bottom,
-    },
-    padded && styles.padded,
-    centered && styles.centered,
-    style,
-  ]
 
   if (scroll) {
     return (
-      <ScrollView
-        style={styles.base}
-        contentContainerStyle={[
-          styles.scrollContent,
-          padded   && styles.padded,
-          centered && styles.centered,
-          { paddingTop: insets.top, paddingBottom: insets.bottom + 20 },
-        ]}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {children}
-      </ScrollView>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.scrollContent,
+            padded   && styles.padded,
+            centered && styles.centered,
+          ]}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {children}
+        </ScrollView>
+      </SafeAreaView>
     )
   }
 
   return (
-    <View style={containerStyle} {...props}>
-      {children}
-    </View>
+    <SafeAreaView style={styles.safeArea}>
+      <View
+        style={[
+          styles.base,
+          padded   && styles.padded,
+          centered && styles.centered,
+          style,
+        ]}
+        {...props}
+      >
+        {children}
+      </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
-  base: {
+  safeArea: {
     flex:            1,
     backgroundColor: colors.ink,
+  },
+  base: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   padded: {
     paddingHorizontal: layout.screenPaddingH,
     paddingVertical:   layout.screenPaddingV,
-  },
-  scrollContent: {
-    flexGrow: 1,
   },
   centered: {
     alignItems:     'center',
