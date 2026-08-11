@@ -3,6 +3,8 @@ import { Tabs } from 'expo-router'
 import { View, StyleSheet, Platform } from 'react-native'
 import { Home, ArrowUpRight, ArrowDownLeft, Clock, User } from 'lucide-react-native'
 import { colors, layout, radii, shadows } from '@/theme/tokens'
+import { Toast } from '@/components/shared/Toast'
+import { useRealtime } from '@/hooks/useRealtime'
 
 interface TabIconProps {
   icon:    React.ReactNode
@@ -17,77 +19,87 @@ function TabIcon({ icon, focused }: TabIconProps) {
   )
 }
 
+function AppShell({ children }: { children: React.ReactNode }) {
+  useRealtime()
+  return (
+    <View style={{ flex: 1 }}>
+      {children}
+      <Toast />
+    </View>
+  )
+}
+
 export default function AppLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarShowLabel: false,
-        tabBarActiveTintColor:   colors.teal,
-        tabBarInactiveTintColor: colors.textTertiary,
-      }}
-    >
-      <Tabs.Screen
-        name="inicio"
-        options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              icon={<Home size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
-            />
-          ),
+    <AppShell>
+      <Tabs
+        screenOptions={{
+          headerShown:           false,
+          tabBarStyle:           styles.tabBar,
+          tabBarShowLabel:       false,
+          tabBarActiveTintColor:   colors.teal,
+          tabBarInactiveTintColor: colors.textTertiary,
         }}
-      />
-      <Tabs.Screen
-        name="enviar/index"
-        options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              icon={<ArrowUpRight size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="recibir"
-        options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              icon={<ArrowDownLeft size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="historial"
-        options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              icon={<Clock size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="perfil"
-        options={{
-          tabBarIcon: ({ focused, color }) => (
-            <TabIcon
-              focused={focused}
-              icon={<User size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
-            />
-          ),
-        }}
-      />
-
-      {/* Ocultar pantallas del flujo de envío del tab bar */}
-      <Tabs.Screen name="enviar/monto"    options={{ href: null }} />
-      <Tabs.Screen name="enviar/confirmar" options={{ href: null }} />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="inicio"
+          options={{
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                focused={focused}
+                icon={<Home size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="enviar/index"
+          options={{
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                focused={focused}
+                icon={<ArrowUpRight size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="recibir"
+          options={{
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                focused={focused}
+                icon={<ArrowDownLeft size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="historial"
+          options={{
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                focused={focused}
+                icon={<Clock size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="perfil"
+          options={{
+            tabBarIcon: ({ focused, color }) => (
+              <TabIcon
+                focused={focused}
+                icon={<User size={22} color={color} strokeWidth={focused ? 2.5 : 1.8} />}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen name="enviar/monto"    options={{ href: null }} />
+        <Tabs.Screen name="enviar/confirmar" options={{ href: null }} />
+      </Tabs>
+    </AppShell>
   )
 }
 

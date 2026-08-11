@@ -30,3 +30,14 @@ export async function buscarPorUsername(username: string) {
   if (error) return null
   return data
 }
+
+
+export async function buscarUsuariosPorUsername(query: string) {
+  const { data } = await supabase
+    .from('usuarios')
+    .select('id, username, nombre, puntuacion')
+    .ilike('username', `%${query}%`)
+    .limit(5)
+
+  return data ?? []
+}
