@@ -25,48 +25,70 @@ function SesionListener() {
   const { setSesion, setCargando } = useSesionStore()
 
   useEffect(() => {
-    // Verificar sesión existente al arrancar
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (data.session?.user) {
-        try {
-          const perfil = await obtenerPerfil(data.session.user.id)
-          setSesion({
-            id:      data.session.user.id,
-            email:   data.session.user.email!,
-            usuario: perfil,
-          })
-        } catch {
-          setSesion(null)
-        }
-      } else {
-        setSesion(null)
-      }
-      setCargando(false)
-    })
+    let montado = true
 
-    // Escuchar cambios de sesión
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          try {
-            const perfil = await obtenerPerfil(session.user.id)
+    async function cargarSesionInicial() {
+      try {
+        setCargando(true)
+        const { data: { session } } = await supabase.auth.getSession()
+
+        if (!montado) return
+
+        if (session?.user) {
+          const perfil = await obtenerPerfil(session.user.id)
+          if (montado) {
             setSesion({
               id:      session.user.id,
               email:   session.user.email!,
               usuario: perfil,
             })
-          } catch {
-            setSesion(null)
           }
+        } else {
+          if (montado) setSesion(null)
         }
+      } catch {
+        if (montado) setSesion(null)
+      } finally {
+        if (montado) setCargando(false)
+      }
+    }
+
+    cargarSesionInicial()
+
+    // Escuchar cambios de sesión
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (!montado) return
+
         if (event === 'SIGNED_OUT') {
           setSesion(null)
+          setCargando(false)
+          return
         }
-        setCargando(false)
+
+        if (event === 'TOKEN_REFRESHED' && session?.user) {
+          try {
+            const perfil = await obtenerPerfil(session.user.id)
+            if (montado) {
+              setSesion({
+                id:      session.user.id,
+                email:   session.user.email!,
+                usuario: perfil,
+              })
+            }
+          } catch {
+            if (montado) setSesion(null)
+          } finally {
+            if (montado) setCargando(false)
+          }
+        }
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      montado = false
+      subscription.unsubscribe()
+    }
   }, [])
 
   return null

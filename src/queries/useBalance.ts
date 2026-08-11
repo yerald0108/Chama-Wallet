@@ -9,10 +9,9 @@ export function useBalance(direccion: string | null | undefined) {
 
   return useQuery({
     queryKey:       ['balance', direccion],
-    queryFn:        async () => {
+    queryFn: async () => {
       if (!direccion) return '0.00'
       const balance = await obtenerBalanceUSDT(direccion)
-      // Guardar en cache offline
       setUltimoBalance(balance)
       return balance
     },

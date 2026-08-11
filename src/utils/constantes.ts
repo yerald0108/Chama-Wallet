@@ -9,7 +9,7 @@ export const BSC = {
   chainId:    97,
   rpcUrl:     'https://data-seed-prebsc-1-s1.binance.org:8545',
   explorerUrl:'https://testnet.bscscan.com',
-  usdt:       '0x337610d27c682E347C9cD60BD4b3b107C9d34dD',
+  usdt:       '0x337610d27c682E347C9cD60BD4b3b107C9d34dDD',
   nombre:     'BSC Testnet',
 
   // MAINNET — descomentar para producción
