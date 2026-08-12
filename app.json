@@ -7,7 +7,8 @@
     "scheme": "chama",
     "userInterfaceStyle": "dark",
     "splash": {
-      "backgroundColor": "#0A0F1E"
+      "backgroundColor": "#0A0F1E",
+      "resizeMode": "contain"
     },
     "android": {
       "adaptiveIcon": {

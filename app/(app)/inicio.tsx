@@ -1,49 +1,55 @@
 // app/(app)/inicio.tsx
 import { View, StyleSheet, RefreshControl, ScrollView } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { ArrowUpRight, ArrowDownLeft, Clock } from 'lucide-react-native'
+import { ArrowUpRight, ArrowDownLeft, Clock, TrendingUp } from 'lucide-react-native'
 import { router } from 'expo-router'
-import { Screen, AppText, Card, Button } from '@/components/ui'
+import { AppText, Card, Button } from '@/components/ui'
 import { OfflineBanner } from '@/components/shared/OfflineBanner'
 import { BalanceSkeleton } from '@/components/wallet/BalanceSkeleton'
 import { useBalance } from '@/queries/useBalance'
+import { useTransacciones } from '@/queries/useTransacciones'
 import { useSesionStore } from '@/stores/sesionStore'
 import { useOfflineStore } from '@/stores/offlineStore'
 import { useConectividad } from '@/hooks/useConectividad'
-import { colors, spacing, iconSizes } from '@/theme/tokens'
+import { formatearUSDT, formatearFechaRelativa } from '@/utils/formateo'
+import { colors, spacing, iconSizes, radii } from '@/theme/tokens'
+import type { TransaccionConUsuarios } from '@/types/transaccion'
 
 export default function Inicio() {
-  const sesion       = useSesionStore(s => s.sesion)
+  const sesion        = useSesionStore(s => s.sesion)
   const ultimoBalance = useOfflineStore(s => s.ultimoBalance)
   const ultimaActualizacion = useOfflineStore(s => s.ultimaActualizacion)
-  const online       = useOfflineStore(s => s.online)
+  const online        = useOfflineStore(s => s.online)
 
-  // Activar listener de conectividad
   useConectividad()
 
-  const direccion = sesion?.usuario?.direccion
+  const usuario   = sesion?.usuario
+  const direccion = usuario?.direccion
+
   const {
-    data:       balance,
+    data:        balance,
     isLoading,
     isError,
     refetch,
     isRefetching,
   } = useBalance(direccion)
 
-  const balanceMostrar = balance ?? ultimoBalance ?? '0.00'
+  const { data: txs } = useTransacciones(usuario?.id)
 
-  function formatBalance(val: string): string {
-    const num = parseFloat(val)
-    if (isNaN(num)) return '0.00'
-    return num.toFixed(2)
-  }
+  const balanceMostrar  = balance ?? ultimoBalance ?? '0.00'
+  const ultimasTres     = ((txs ?? []) as TransaccionConUsuarios[]).slice(0, 3)
 
   function tiempoActualizacion(): string {
-    if (!ultimaActualizacion) return ''
+    if (!ultimaActualizacion) return 'Actualizando...'
     const diff = Math.floor((Date.now() - ultimaActualizacion.getTime()) / 1000)
-    if (diff < 60)  return `hace ${diff}s`
+    if (diff < 10)   return 'Ahora mismo'
+    if (diff < 60)   return `hace ${diff}s`
     if (diff < 3600) return `hace ${Math.floor(diff / 60)}min`
     return `hace ${Math.floor(diff / 3600)}h`
+  }
+
+  function esEnviada(tx: TransaccionConUsuarios) {
+    return tx.remitente_id === usuario?.id
   }
 
   return (
@@ -65,12 +71,20 @@ export default function Inicio() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <AppText variant="body" color="secondary">
-            Bienvenido
-          </AppText>
-          <AppText variant="heading">
-            @{sesion?.usuario?.username ?? '—'}
-          </AppText>
+          <View>
+            <AppText variant="caption" color="secondary">
+              BIENVENIDO
+            </AppText>
+            <AppText variant="heading">
+              @{usuario?.username ?? '—'}
+            </AppText>
+          </View>
+          <View style={styles.reputacionBadge}>
+            <TrendingUp size={12} color={colors.gold} />
+            <AppText variant="caption" style={styles.reputacionTexto}>
+              {(usuario?.puntuacion ?? 0) > 0 ? '+' : ''}{usuario?.puntuacion ?? 0}
+            </AppText>
+          </View>
         </View>
 
         {/* Card de balance */}
@@ -85,9 +99,13 @@ export default function Inicio() {
 
               <View style={styles.balanceRow}>
                 <AppText style={styles.balanceNumero} color="teal">
-                  {formatBalance(balanceMostrar)}
+                  {formatearUSDT(balanceMostrar)}
                 </AppText>
-                <AppText variant="body" color="secondary" style={styles.balanceMoneda}>
+                <AppText
+                  variant="subheading"
+                  color="secondary"
+                  style={styles.balanceMoneda}
+                >
                   USDT
                 </AppText>
               </View>
@@ -95,15 +113,10 @@ export default function Inicio() {
               <View style={styles.balanceMeta}>
                 <View style={[
                   styles.indicador,
-                  { backgroundColor: online ? colors.teal : colors.gold }
+                  { backgroundColor: online ? colors.teal : colors.gold },
                 ]} />
                 <AppText variant="caption" color="secondary">
-                  {online
-                    ? ultimaActualizacion
-                      ? `Actualizado ${tiempoActualizacion()}`
-                      : 'Actualizando...'
-                    : 'Sin conexión'
-                  }
+                  {online ? tiempoActualizacion() : 'Sin conexión'}
                 </AppText>
               </View>
             </View>
@@ -127,24 +140,87 @@ export default function Inicio() {
           />
         </View>
 
-        {/* Acceso rápido al historial */}
-        <Button
-          label="Ver historial"
-          onPress={() => router.push('/(app)/historial')}
-          variant="ghost"
-          icon={<Clock size={iconSizes.md} color={colors.textSecondary} />}
-        />
+        {/* Últimas transacciones */}
+        {ultimasTres.length > 0 && (
+          <View style={styles.txSection}>
+            <View style={styles.txSectionHeader}>
+              <AppText variant="subheading">Recientes</AppText>
+              <Button
+                label="Ver todo"
+                onPress={() => router.push('/(app)/historial')}
+                variant="ghost"
+                size="sm"
+                fullWidth={false}
+              />
+            </View>
+
+            <Card variant="default" style={styles.txCard}>
+              {ultimasTres.map((tx, index) => {
+                const enviada     = esEnviada(tx)
+                const contraparte = enviada
+                  ? tx.destinatario?.username
+                  : tx.remitente?.username
+
+                return (
+                  <View key={tx.id}>
+                    <View style={styles.txItem}>
+                      <View style={[
+                        styles.txIcono,
+                        enviada ? styles.txIconoEnviada : styles.txIconoRecibida,
+                      ]}>
+                        {enviada
+                          ? <ArrowUpRight  size={14} color={colors.coral} />
+                          : <ArrowDownLeft size={14} color={colors.teal}  />
+                        }
+                      </View>
+
+                      <View style={styles.txInfo}>
+                        <AppText variant="body" bold>
+                          {enviada ? 'A' : 'De'} @{contraparte}
+                        </AppText>
+                        <AppText variant="caption" color="secondary">
+                          {formatearFechaRelativa(tx.creado_en)}
+                        </AppText>
+                      </View>
+
+                      <AppText
+                        variant="body"
+                        color={enviada ? 'coral' : 'teal'}
+                        bold
+                      >
+                        {enviada ? '-' : '+'}{formatearUSDT(tx.monto)}
+                      </AppText>
+                    </View>
+
+                    {index < ultimasTres.length - 1 && (
+                      <View style={styles.txSeparador} />
+                    )}
+                  </View>
+                )
+              })}
+            </Card>
+          </View>
+        )}
+
+        {/* Estado vacío */}
+        {ultimasTres.length === 0 && !isLoading && (
+          <Card variant="outlined" style={styles.vaciоCard}>
+            <Clock size={32} color={colors.textTertiary} strokeWidth={1} />
+            <AppText variant="body" color="secondary" center>
+              Aún no tienes transacciones. Pide a alguien que te envíe USDT a{' '}
+              <AppText variant="body" color="teal" bold>
+                @{usuario?.username}
+              </AppText>
+            </AppText>
+          </Card>
+        )}
 
         {isError && !balance && (
-          <AppText
-            variant="caption"
-            color="coral"
-            center
-            style={{ marginTop: spacing[4] }}
-          >
+          <AppText variant="caption" color="coral" center>
             No se pudo obtener el saldo. Desliza hacia abajo para reintentar.
           </AppText>
         )}
+
       </ScrollView>
     </SafeAreaView>
   )
@@ -159,15 +235,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding:    spacing[5],
-    paddingTop: spacing[6],
-    gap:        spacing[5],
+    paddingHorizontal: spacing[5],
+    paddingTop:        spacing[6],
+    paddingBottom:     spacing[10],
+    gap:               spacing[5],
   },
   header: {
-    gap: spacing[1],
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+  },
+  reputacionBadge: {
+    flexDirection:     'row',
+    alignItems:        'center',
+    gap:               spacing[1],
+    backgroundColor:   colors.goldLight,
+    paddingVertical:   4,
+    paddingHorizontal: spacing[3],
+    borderRadius:      radii.full,
+    borderWidth:       1,
+    borderColor:       colors.gold,
+  },
+  reputacionTexto: {
+    color:      colors.gold,
+    fontWeight: '600' as const,
   },
   balanceCard: {
-    padding: spacing[5],
+    padding: spacing[6],
   },
   balanceContent: {
     alignItems: 'center',
@@ -179,10 +273,10 @@ const styles = StyleSheet.create({
     gap:           spacing[2],
   },
   balanceNumero: {
-    fontSize:      56,
-    fontWeight:    '800',
+    fontSize:      60,
+    fontWeight:    '800' as const,
     letterSpacing: -2,
-    lineHeight:    64,
+    lineHeight:    68,
   },
   balanceMoneda: {
     marginBottom: spacing[2],
@@ -203,5 +297,50 @@ const styles = StyleSheet.create({
   },
   accionBtn: {
     flex: 1,
+  },
+  txSection: {
+    gap: spacing[3],
+  },
+  txSectionHeader: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    justifyContent: 'space-between',
+  },
+  txCard: {
+    padding: 0,
+    overflow: 'hidden',
+  },
+  txItem: {
+    flexDirection:  'row',
+    alignItems:     'center',
+    gap:            spacing[3],
+    padding:        spacing[4],
+  },
+  txIcono: {
+    width:          32,
+    height:         32,
+    borderRadius:   16,
+    alignItems:     'center',
+    justifyContent: 'center',
+  },
+  txIconoEnviada: {
+    backgroundColor: colors.coralLight,
+  },
+  txIconoRecibida: {
+    backgroundColor: colors.tealLight,
+  },
+  txInfo: {
+    flex: 1,
+    gap:  2,
+  },
+  txSeparador: {
+    height:          1,
+    backgroundColor: colors.borderSubtle,
+    marginLeft:      spacing[4] + 32 + spacing[3],
+  },
+  vaciоCard: {
+    alignItems:    'center',
+    gap:           spacing[4],
+    paddingVertical: spacing[8],
   },
 })
