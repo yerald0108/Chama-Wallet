@@ -14,7 +14,8 @@
       "adaptiveIcon": {
         "backgroundColor": "#0A0F1E"
       },
-      "package": "com.chamaapp.wallet"
+      "package": "com.chamaapp.wallet",
+      "newArchEnabled": false
     },
     "plugins": [
       "expo-router",
@@ -22,6 +23,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ee727139-19e3-4e0d-8754-1d999e75b02a"
+      }
     }
   }
 }
