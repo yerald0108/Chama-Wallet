@@ -14,8 +14,7 @@
       "adaptiveIcon": {
         "backgroundColor": "#0A0F1E"
       },
-      "package": "com.chamaapp.wallet",
-      "newArchEnabled": false
+      "package": "com.chamaapp.wallet"
     },
     "plugins": [
       "expo-router",
